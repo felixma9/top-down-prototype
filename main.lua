@@ -1,64 +1,53 @@
 local ball = {
     x = 400,
     y = 300,
-    v_x = 0,
-    v_y = 0,
-    m = 1,
+    r = 20,
+    vx = 0,
+    vy = 0
 }
 
-local pivot = {
-    x = 400,
-    y = 300
+local m_start = {
+    x = 0,
+    y = 0
 }
 
-local k_pivot = 200
-local k_mouse = 400
-local velocity = 0
-local damping = 0.5
+local displacement = 0
 
 function love.draw()
-    love.graphics.setDefaultFilter("nearest", "nearest")
-    love.graphics.print("Velocity: "..velocity)
-    love.graphics.circle("fill", ball.x, ball.y, 20)
+    love.graphics.circle("fill", ball.x, ball.y, ball.r)
+    love.graphics.print("Mouse vector magnitude: "..displacement)
+    love.graphics.print("Velocity: "..ball.vx, 0, 20)
 end
 
 function love.load()
 end
 
+local function push_ball(dx, dy)
+    ball.vx = dx
+    ball.vy = dy
+end
+
 function love.update(dt)
-    velocity = math.sqrt(ball.v_x * ball.v_x + ball.v_y * ball.v_y)
+    local damping = 1
     local decay = math.exp(-damping * dt)
 
-    -- Calculate ball displacement from pivot
-    local d_x = pivot.x - ball.x
-    local d_y = pivot.y - ball.y
+    ball.vx = ball.vx * decay
+    ball.vy = ball.vy * decay
 
-    -- Calculate acceleration towards pivot
-    local a_x = (k_pivot * d_x) / ball.m
-    local a_y = (k_pivot * d_y) / ball.m
+    ball.x = ball.x + (ball.vx * dt)
+    ball.y = ball.y + (ball.vy * dt)
+end
 
-    -- Mouse calculations
-    local ma_x = 0
-    local ma_y = 0
-    if love.mouse.isDown(1) then
-        ball.v_x = 0
-        ball.v_y = 0
+function love.mousepressed(x, y)
+    m_start = {
+        x = x,
+        y = y
+    }
+end
 
-        -- Calculate mouse displacement from ball
-        local mouse_x, mouse_y = love.mouse.getPosition()
-        local md_x = mouse_x - ball.x
-        local md_y = mouse_y - ball.y
-    
-        -- Calculate acceleration towards mouse
-        ma_x = 3 * (k_mouse * md_x) / ball.m
-        ma_y = 3 * (k_mouse * md_y) / ball.m
-    end
+function love.mousereleased(x, y) 
+    local dx = m_start.x - x
+    local dy = m_start.y - y
 
-    -- Calculate total velocity
-    ball.v_x = (ball.v_x + ((a_x + ma_x) * dt)) * decay
-    ball.v_y = (ball.v_y + ((a_y + ma_y) * dt)) * decay 
-
-    -- Update location of ball
-    ball.x = ball.x + (ball.v_x * dt)
-    ball.y = ball.y + (ball.v_y * dt)
+    push_ball(dx, dy)
 end
